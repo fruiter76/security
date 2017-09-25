@@ -18,6 +18,8 @@ import org.springframework.web.context.request.WebRequest;
 import com.imooc.security.app.AppSecretException;
 
 /**
+ * app环境下替换providerSignInUtils，避免由于没有session导致读不到社交用户信息的问题
+ * 
  * @author zhailiang
  *
  */
@@ -33,10 +35,20 @@ public class AppSingUpUtils {
 	@Autowired
 	private ConnectionFactoryLocator connectionFactoryLocator;
 
+	/**
+	 * 缓存社交网站用户信息到redis
+	 * @param request
+	 * @param connectionData
+	 */
 	public void saveConnectionData(WebRequest request, ConnectionData connectionData) {
 		redisTemplate.opsForValue().set(getKey(request), connectionData, 10, TimeUnit.MINUTES);
 	}
 
+	/**
+	 * 将缓存的社交网站用户信息与系统注册用户信息绑定
+	 * @param request
+	 * @param userId
+	 */
 	public void doPostSignUp(WebRequest request, String userId) {
 		String key = getKey(request);
 		if(!redisTemplate.hasKey(key)){
@@ -50,6 +62,11 @@ public class AppSingUpUtils {
 		redisTemplate.delete(key);
 	}
 
+	/**
+	 * 获取redis key
+	 * @param request
+	 * @return
+	 */
 	private String getKey(WebRequest request) {
 		String deviceId = request.getHeader("deviceId");
 		if (StringUtils.isBlank(deviceId)) {
